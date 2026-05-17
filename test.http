@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:8080
+
+### Bước 1 - Đăng nhập (chạy cái này trước)
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "admin@trungtam.com",
+    "password": "123456"
+}
+
+###
+
+### Lấy danh sách tất cả users
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{login.response.body.token}}
+
+###
+
+### Lấy danh sách giáo viên
+GET {{baseUrl}}/api/users/role/teacher
+Authorization: Bearer {{login.response.body.token}}
+
+###
+
+### Tạo giáo viên mới
+POST {{baseUrl}}/api/users
+Authorization: Bearer {{login.response.body.token}}
+Content-Type: application/json
+
+{
+    "fullName": "Nguyễn Văn Test",
+    "email": "test@trungtam.com",
+    "passwordHash": "123456",
+    "role": "teacher",
+    "phone": "0909000001"
+}
+
+###
+
+### Lấy danh sách lớp học
+GET {{baseUrl}}/api/classes
+Authorization: Bearer {{login.response.body.token}}
+
+###
+
+### Lấy danh sách lớp không có token - phải bị chặn
+GET {{baseUrl}}/api/classes
