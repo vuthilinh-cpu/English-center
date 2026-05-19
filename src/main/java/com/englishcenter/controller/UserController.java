@@ -4,86 +4,52 @@ import com.englishcenter.entity.User;
 import com.englishcenter.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
-import java.util.Map;
 
-@RestController
-@RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
+import java.util.List;
+
+// @RestController: Khai báo class này là một API Controller. Các kết quả trả về sẽ tự động chuyển thành JSON.
+@RestController 
+// @RequestMapping: Thiết lập đường dẫn gốc cho toàn bộ các API trong file này.
+@RequestMapping("/api/users") 
 public class UserController {
 
-    @Autowired private UserRepository userRepo;
-    @Autowired private PasswordEncoder passwordEncoder;
+    // @Autowired: Tự động nhúng (inject) UserRepository vào để tương tác với Database.
+    @Autowired
+    private UserRepository userRepository;
 
-    // =============================================
-    // GET /api/users — lấy tất cả users
-    // =============================================
+    // Lấy toàn bộ danh sách người dùng. Dùng phương thức GET.
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userRepo.findAll());
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
-    // =============================================
-    // GET /api/users/role/{role} — lấy theo role
-    // VD: /api/users/role/teacher → danh sách GV
-    // =============================================
+    // Lấy thông tin 1 người dùng theo ID.
+    // @PathVariable: Lấy giá trị {id} từ trên URL (VD: /api/users/5 thì id = 5).
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(ResponseEntity::ok) // Trả về mã 200 OK kèm dữ liệu nếu tìm thấy
+                .orElse(ResponseEntity.notFound().build()); // Trả về mã 404 Not Found nếu không có
+    }
+
+    // Lấy danh sách người dùng theo vai trò (TEACHER, STUDENT...).
     @GetMapping("/role/{role}")
-    public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
-        return ResponseEntity.ok(userRepo.findByRole(role));
+    public List<User> getUsersByRole(@PathVariable String role) {
+        return userRepository.findByRole(role);
     }
 
-    // =============================================
-    // POST /api/users — tạo user mới
-    // =============================================
+    // Tạo mới một tài khoản. Dùng phương thức POST.
+    // @RequestBody: Chuyển đổi cục dữ liệu JSON gửi từ Frontend thành Object User trong Java.
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody User user) {
-        // Kiểm tra email đã tồn tại chưa
-        if (userRepo.findByEmail(user.getEmail()).isPresent()) {
-            return ResponseEntity.status(400)
-                .body(Map.of("message", "Email đã tồn tại"));
-        }
-        // Mã hóa mật khẩu trước khi lưu
-        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-        user.setIsActive(true);
-        return ResponseEntity.status(201).body(userRepo.save(user));
+    public User createUser(@RequestBody User user) {
+        return userRepository.save(user); 
     }
 
-    // =============================================
-    // PUT /api/users/{id} — cập nhật thông tin
-    // =============================================
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Integer id,
-                                        @RequestBody User updated) {
-        return userRepo.findById(id)
-            .map(user -> {
-                user.setFullName(updated.getFullName());
-                user.setPhone(updated.getPhone());
-                user.setRole(updated.getRole());
-                // Chỉ đổi mật khẩu nếu có gửi lên
-                if (updated.getPasswordHash() != null
-                        && !updated.getPasswordHash().isEmpty()) {
-                    user.setPasswordHash(
-                        passwordEncoder.encode(updated.getPasswordHash()));
-                }
-                return ResponseEntity.ok(userRepo.save(user));
-            })
-            .orElse(ResponseEntity.notFound().build());
-    }
-
-    // =============================================
-    // PATCH /api/users/{id}/deactivate — khóa tài khoản
-    // Không xóa — chỉ đặt is_active = false
-    // =============================================
-    @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<?> deactivateUser(@PathVariable Integer id) {
-        return userRepo.findById(id)
-            .map(user -> {
-                user.setIsActive(false);
-                userRepo.save(user);
-                return ResponseEntity.ok(Map.of("message", "Đã khóa tài khoản"));
-            })
-            .orElse(ResponseEntity.notFound().build());
+    // Xóa một tài khoản theo ID. Dùng phương thức DELETE.
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userRepository.deleteById(id);
+        return ResponseEntity.noContent().build(); // Trả về mã 204 báo hiệu đã xóa thành công
     }
 }

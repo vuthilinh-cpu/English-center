@@ -1,6 +1,19 @@
 @baseUrl = http://localhost:8080
 
-### Bước 1 - Đăng nhập (chạy cái này trước)
+### Bước 0 - Tạo user test (nếu chưa có)
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "fullName": "Admin User",
+    "email": "admin@trungtam.com",
+    "password": "123456"
+}
+
+###
+
+### Bước 1 - Đăng nhập (chạy cái này trước - sau khi có user)
 # @name login
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -30,11 +43,11 @@ Authorization: Bearer {{login.response.body.token}}
 Content-Type: application/json
 
 {
-    "fullName": "Nguyễn Văn Test",
-    "email": "test@trungtam.com",
+    "fullName": "Nguyễn Quản Trị",
+    "email": "admin@trungtam.com",
     "passwordHash": "123456",
-    "role": "teacher",
-    "phone": "0909000001"
+    "role": "admin",
+    "phone": "0901000001"
 }
 
 ###

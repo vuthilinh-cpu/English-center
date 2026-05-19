@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,11 +18,17 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 public class AuthController {
 
-    @Autowired private UserRepository userRepo;
-    @Autowired private JwtUtil jwtUtil;
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired 
+    private UserRepository userRepo;
+    
+    @Autowired 
+    private JwtUtil jwtUtil;
+    
+    @Autowired 
+    private PasswordEncoder passwordEncoder;
 
-    // POST /api/auth/login
+    // ==========================================
+    // API ĐĂNG NHẬP
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
 
@@ -28,52 +36,78 @@ public class AuthController {
         Optional<User> userOpt = userRepo.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(401)
-                .body(Map.of("message", "Email hoặc mật khẩu sai"));
+                    .body(Map.of("message", "Email hoặc mật khẩu sai"));
         }
 
         User user = userOpt.get();
 
         // Bước 2: Kiểm tra tài khoản có bị khóa không
-        if (!user.getIsActive()) {
+        // SỬA LẠI: Dùng user.isActive() thay vì getIsActive(), và không check null
+        if (!user.isActive()) {
             return ResponseEntity.status(401)
-                .body(Map.of("message", "Tài khoản đã bị khóa"));
+                    .body(Map.of("message", "Tài khoản đã bị khóa"));
         }
 
-       // BƯỚC 3: So sánh mật khẩu
-System.out.println("=== DEBUG ===");
-System.out.println("Email: " + request.getEmail());
-System.out.println("Password nhập: " + request.getPassword());
-System.out.println("Hash trong DB: " + user.getPasswordHash());
-boolean match = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
-System.out.println("Kết quả match: " + match);
-System.out.println("=============");
-
-if (!match) {
-    return ResponseEntity.status(401)
-        .body(Map.of("message", "Email hoặc mật khẩu sai"));
-}
+        // Bước 3: So sánh mật khẩu (Dùng thuật toán băm Bcrypt)
+        boolean match = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
+        
+        if (!match) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Email hoặc mật khẩu sai"));
+        }
 
         // Bước 4: Tạo JWT token
         String token = jwtUtil.generateToken(user.getId(), user.getEmail(), user.getRole());
 
         // Bước 5: Trả về token + thông tin user
+        // Chú ý: Dùng getFullname() để khớp với Entity
         return ResponseEntity.ok(new LoginResponse(
-            token,
-            user.getId(),
-            user.getFullName(),
-            user.getEmail(),
-            user.getRole()
+                token,
+                user.getId(),
+                user.getFullname(), 
+                user.getEmail(),
+                user.getRole()
         ));
     }
 
-    @GetMapping("/test")
-public ResponseEntity<?> test() {
-    System.out.println("=== TEST ENDPOINT ĐƯỢC GỌI ===");
-    return ResponseEntity.ok(Map.of("message", "API hoạt động!"));
-}
-@GetMapping("/generate-hash")
-public ResponseEntity<?> generateHash() {
-    String hash = passwordEncoder.encode("123456");
-    return ResponseEntity.ok(Map.of("hash", hash));
-}
+  
+    // API ĐĂNG KÝ (REGISTER)
+   
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        
+        // Kiểm tra xem email đã tồn tại chưa
+        if (userRepo.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseEntity.status(400)
+                    .body(Map.of("message", "Email này đã được sử dụng!"));
+        }
+
+        // Tạo mới tài khoản
+        User newUser = new User();
+        // SỬA LẠI: Dùng setFullname để khớp với Entity
+        newUser.setFullname(request.getFullName()); 
+        newUser.setEmail(request.getEmail());
+        newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        
+        // Cài đặt các giá trị mặc định
+        newUser.setRole("STUDENT"); 
+        newUser.setActive(true); // SỬA LẠI: Dùng setActive(true) thay vì setIsActive(true)
+        newUser.setCreatedAt(LocalDateTime.now()); // Lưu lại thời gian tạo tài khoản
+
+        userRepo.save(newUser);
+
+        return ResponseEntity.ok(Map.of("message", "Đăng ký tài khoản thành công!"));
+    }
+
+    // ==========================================
+    // API TEST TẠO MẬT KHẨU MÃ HÓA
+    
+    @GetMapping("/generate-hash")
+    public ResponseEntity<?> generateHash(@RequestParam(defaultValue = "123456") String rawPassword) {
+        String hash = passwordEncoder.encode(rawPassword);
+        return ResponseEntity.ok(Map.of(
+            "rawPassword", rawPassword,
+            "hash", hash
+        ));
+    }
 }

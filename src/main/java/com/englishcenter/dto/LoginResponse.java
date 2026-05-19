@@ -2,37 +2,58 @@ package com.englishcenter.dto;
 
 public class LoginResponse {
     private String token;
-    private Integer userId;
-    private String username;
+    private Long id;
+    private String fullname;
     private String email;
     private String role;
 
-    public LoginResponse(String token, Integer userId, String username, String email, String role) {
+    // BẠN CẦN THÊM ĐOẠN CONSTRUCTOR NÀY VÀO LÀ SẼ HẾT LỖI
+    public LoginResponse(String token, Long id, String fullname, String email, String role) {
         this.token = token;
-        this.userId = userId;
-        this.username = username;
+        this.id = id;
+        this.fullname = fullname;
         this.email = email;
         this.role = role;
     }
 
+    // Getters and setters
     public String getToken() {
         return token;
     }
 
-    public Integer getUserId() {
-        return userId;
+    public void setToken(String token) {
+        this.token = token;
     }
 
-    public String getUsername() {
-        return username;
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getFullname() {
+        return fullname;
+    }
+
+    public void setFullname(String fullname) {
+        this.fullname = fullname;
     }
 
     public String getEmail() {
         return email;
     }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getRole() {
         return role;
     }
 
+    public void setRole(String role) {
+        this.role = role;
+    }
 }

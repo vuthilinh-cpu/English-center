@@ -8,13 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Integer> {
+public interface UserRepository extends JpaRepository<User, Long> {
+    
+    // Chỉ giữ lại tìm theo Email (Vì email thay cho username)
     Optional<User> findByEmail(String email);
-    // Spring tự viết SQL:
-    // SELECT * FROM Users WHERE email = ?
-    List<User> findByRole(String role);
-// SELECT * FROM Users WHERE role = ?
-
-List<User> findByIsActive(Boolean isActive);
-// SELECT * FROM Users WHERE is_active = ?
+    
+    // Tìm danh sách theo chức vụ
+    List<User> findByRole(String role); 
 }

@@ -17,7 +17,7 @@ public class JwtUtil {
     private Long expiration;
 
     // Tạo token từ thông tin user
-    public String generateToken(Integer userId, String email, String role) {
+    public String generateToken(Long userId, String email, String role) {
         Key key = Keys.hmacShaKeyFor(secret.getBytes());
         return Jwts.builder()
                 .setSubject(email)
@@ -25,7 +25,7 @@ public class JwtUtil {
                 .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
-                .signWith(key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
